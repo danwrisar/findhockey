@@ -1,162 +1,193 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <title>Places Searchbox</title>
+<head>
+    <meta charset='utf-8' />
+    <title>Filter symbols by toggling a list</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.48.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.48.0/mapbox-gl.css' rel='stylesheet' />
     <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
-      #map {
-        height: 100%;
-      }
-      /* Optional: Makes the sample page fill the window. */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      .controls {
-        margin-top: 10px;
-        border: 1px solid transparent;
-        border-radius: 2px 0 0 2px;
-        box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        height: 32px;
-        outline: none;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-      }
-
-      #pac-input {
-        background-color: #fff;
-        font-family: Roboto;
-        font-size: 15px;
-        font-weight: 300;
-        margin-left: 12px;
-        padding: 0 11px 0 13px;
-        text-overflow: ellipsis;
-        width: 300px;
-      }
-
-      #pac-input:focus {
-        border-color: #4d90fe;
-      }
-
-      .pac-container {
-        font-family: Roboto;
-      }
-
-      #type-selector {
-        color: #fff;
-        background-color: #4d90fe;
-        padding: 5px 11px 0px 11px;
-      }
-
-      #type-selector label {
-        font-family: Roboto;
-        font-size: 13px;
-        font-weight: 300;
-      }
-      #target {
-        width: 345px;
-      }
-      #textbox {
-      margin-top:7%;
-        position:absolute;
-        border: 1px solid black;
-      padding: 10px;
-        top: 10px;
-      left: 10px;
-        background: white;
-        background-opacity: 0.5;
-             }
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
     </style>
-  </head>
-  <body>
-    <input id="pac-input" class="controls" type="text" placeholder="Search Box">
-    <div id="map"></div>
-    <div id="textbox">
-    <img src="findhockeylogo.png">
-    <h3>Header 3</h3>
-    <h4>Header 4</h4>
-    <script>
-      // This example adds a search box to a map, using the Google Place Autocomplete
-      // feature. People can enter geographical searches. The search box will return a
-      // pick list containing a mix of places and predicted search terms.
+</head>
+<body>
 
-      // This example requires the Places library. Include the libraries=places
-      // parameter when you first load the API. For example:
-      // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
+<style>
+    .filter-group {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        font-weight: 600;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+        border-radius: 3px;
+        width: 120px;
+        color: #fff;
+    }
 
-      function initAutocomplete() {
-        var map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat:54.2292,lng:-10.4726},
-          zoom: 6,
-          mapTypeId: 'roadmap'
-        });
+    .filter-group input[type=checkbox]:first-child + label {
+        border-radius: 3px 3px 0 0;
+    }
 
-        // Create the search box and link it to the UI element.
-        var input = document.getElementById('pac-input');
-        var searchBox = new google.maps.places.SearchBox(input);
-        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+    .filter-group label:last-child {
+        border-radius: 0 0 3px 3px;
+        border: none;
+    }
 
-        // Bias the SearchBox results towards current map's viewport.
-        map.addListener('bounds_changed', function() {
-          searchBox.setBounds(map.getBounds());
-        });
+    .filter-group input[type=checkbox] {
+        display: none;
+    }
 
-        var markers = [];
-        // Listen for the event fired when the user selects a prediction and retrieve
-        // more details for that place.
-        searchBox.addListener('places_changed', function() {
-          var places = searchBox.getPlaces();
+    .filter-group input[type=checkbox] + label {
+        background-color: #3386c0;
+        display: block;
+        cursor: pointer;
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    }
 
-          if (places.length == 0) {
-            return;
-          }
+    .filter-group input[type=checkbox] + label {
+        background-color: #3386c0;
+        text-transform: capitalize;
+    }
 
-          // Clear out the old markers.
-          markers.forEach(function(marker) {
-            marker.setMap(null);
-          });
-          markers = [];
+    .filter-group input[type=checkbox] + label:hover,
+    .filter-group input[type=checkbox]:checked + label {
+        background-color: #4ea0da;
+    }
 
-          // For each place, get the icon, name and location.
-          var bounds = new google.maps.LatLngBounds();
-          places.forEach(function(place) {
-            if (!place.geometry) {
-              console.log("Returned place contains no geometry");
-              return;
-            }
-            var icon = {
-              url: place.icon,
-              size: new google.maps.Size(71, 71),
-              origin: new google.maps.Point(0, 0),
-              anchor: new google.maps.Point(17, 34),
-              scaledSize: new google.maps.Size(25, 25)
-            };
+    .filter-group input[type=checkbox]:checked + label:before {
+        content: '✔';
+        margin-right: 5px;
+    }
+</style>
+<div id='map'></div>
+<nav id='filter-group' class='filter-group'></nav>
 
-            // Create a marker for each place.
-            markers.push(new google.maps.Marker({
-              map: map,
-              icon: icon,
-              title: place.name,
-              position: place.geometry.location
-            }));
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZHczIiwiYSI6ImNqa3MxamtwODB3OHQzd3BuajAzMzJjb3QifQ.V1Ogo40SwaYG9WYeaypPKg';
+var places = {
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "properties": {
+            "icon": "theatre"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.038659, 38.931567]
+        }
+    }, {
+        "type": "Feature",
+        "properties": {
+            "icon": "theater"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.003168, 38.894651]
+        }
+    }, {
+        "type": "Feature",
+        "properties": {
+            "icon": "bar"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.090372, 38.881189]
+        }
+    }, {
+        "type": "Feature",
+        "properties": {
+            "icon": "bicycle"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.052477, 38.943951]
+        }
+    }, {
+        "type": "Feature",
+        "properties": {
+            "icon": "music"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.031706, 38.914581]
+        }
+    }, {
+        "type": "Feature",
+        "properties": {
+            "icon": "music"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.020945, 38.878241]
+        }
+    }, {
+        "type": "Feature",
+        "properties": {
+            "icon": "music"
+        },
+        "geometry": {
+            "type": "Point",
+            "coordinates": [-77.007481, 38.876516]
+        }
+    }]
+};
 
-            if (place.geometry.viewport) {
-              // Only geocodes have viewport.
-              bounds.union(place.geometry.viewport);
-            } else {
-              bounds.extend(place.geometry.location);
-            }
-          });
-          map.fitBounds(bounds);
-        });
-      }
+var filterGroup = document.getElementById('filter-group');
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v9',
+    center: [-77.04, 38.907],
+    zoom: 11.15
+});
 
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtwC7CUUmws5QkYc0ZlMmVf6OJjt1_Dyw&libraries=places&callback=initAutocomplete"
-         async defer></script>
-  </body>
+map.on('load', function() {
+    // Add a GeoJSON source containing place coordinates and information.
+    map.addSource("places", {
+        "type": "geojson",
+        "data": places
+    });
+
+    places.features.forEach(function(feature) {
+        var symbol = feature.properties['icon'];
+        var layerID = 'poi-' + symbol;
+
+        // Add a layer for this symbol type if it hasn't been added already.
+        if (!map.getLayer(layerID)) {
+            map.addLayer({
+                "id": layerID,
+                "type": "symbol",
+                "source": "places",
+                "layout": {
+                    "icon-image": symbol + "-15",
+                    "icon-allow-overlap": true
+                },
+                "filter": ["==", "icon", symbol]
+            });
+
+            // Add checkbox and label elements for the layer.
+            var input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = layerID;
+            input.checked = true;
+            filterGroup.appendChild(input);
+
+            var label = document.createElement('label');
+            label.setAttribute('for', layerID);
+            label.textContent = symbol;
+            filterGroup.appendChild(label);
+
+            // When the checkbox changes, update the visibility of the layer.
+            input.addEventListener('change', function(e) {
+                map.setLayoutProperty(layerID, 'visibility',
+                    e.target.checked ? 'visible' : 'none');
+            });
+        }
+    });
+});
+</script>
+
+</body>
 </html>
