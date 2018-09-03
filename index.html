@@ -2,195 +2,69 @@
 <html>
 <head>
     <meta charset='utf-8' />
-    <title>Filter symbols by toggling a list</title>
+    <title>Find Hockey (Beta)</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.48.0/mapbox-gl.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.48.0/mapbox-gl.css' rel='stylesheet' />
     <style>
         body { margin:0; padding:0; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
+        .footer {position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: rgb(255, 255, 255);
+        color: rgb(0, 0, 0);
+        opacity: 0.8;
+        text-align: center;
+        }
     </style>
 </head>
 <body>
 
-<style>
-    .filter-group {
-        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-        font-weight: 600;
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 1;
-        border-radius: 3px;
-        width: 120px;
-        color: #fff;
-    }
-
-    .filter-group input[type=checkbox]:first-child + label {
-        border-radius: 3px 3px 0 0;
-    }
-
-    .filter-group label:last-child {
-        border-radius: 0 0 3px 3px;
-        border: none;
-    }
-
-    .filter-group input[type=checkbox] {
-        display: none;
-    }
-
-    .filter-group input[type=checkbox] + label {
-        background-color: #3386c0;
-        display: block;
-        cursor: pointer;
-        padding: 10px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-    }
-
-    .filter-group input[type=checkbox] + label {
-        background-color: #3386c0;
-        text-transform: capitalize;
-    }
-
-    .filter-group input[type=checkbox] + label:hover,
-    .filter-group input[type=checkbox]:checked + label {
-        background-color: #4ea0da;
-    }
-
-    .filter-group input[type=checkbox]:checked + label:before {
-        content: '✔';
-        margin-right: 5px;
-    }
-</style>
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css' type='text/css' />
 <div id='map'></div>
-<nav id='filter-group' class='filter-group'></nav>
 
 <script>
-// The unique public URL and link to the created map
-mapboxgl.accessToken = 'pk.VeyJ1IjoiZGFud3JpMzI0MCIsImEiOiJjampjeDF6NXkwMHo1M2ttc3Z6anMxeG02In0.V3vezvIk2Ge_U8UrVkoqaw';
-
-var places = {
-    "type": "FeatureCollection",
-    "features": [{
-        "type": "Feature",
-        "properties": {
-            "icon": "theatre"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.038659, 38.931567]
-        }
-    }, {
-        "type": "Feature",
-        "properties": {
-            "icon": "theater"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.003168, 38.894651]
-        }
-    }, {
-        "type": "Feature",
-        "properties": {
-            "icon": "bar"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.090372, 38.881189]
-        }
-    }, {
-        "type": "Feature",
-        "properties": {
-            "icon": "bicycle"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.052477, 38.943951]
-        }
-    }, {
-        "type": "Feature",
-        "properties": {
-            "icon": "music"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.031706, 38.914581]
-        }
-    }, {
-        "type": "Feature",
-        "properties": {
-            "icon": "music"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.020945, 38.878241]
-        }
-    }, {
-        "type": "Feature",
-        "properties": {
-            "icon": "music"
-        },
-        "geometry": {
-            "type": "Point",
-            "coordinates": [-77.007481, 38.876516]
-        }
-    }]
-};
-
-var filterGroup = document.getElementById('filter-group');
+mapboxgl.accessToken = 'pk.eyJ1IjoiZGFud3JpMzI0MCIsImEiOiJjampjeDF6NXkwMHo1M2ttc3Z6anMxeG02In0.V3vezvIk2Ge_U8UrVkoqaw';
 var map = new mapboxgl.Map({
     container: 'map',
-    // Link to specific mapbox map
     style: 'mapbox://styles/danwri3240/cjjd8y6pc7r0j2rqbr01zf77f',
     center: [-1.138880, 53.358838],
     zoom: 6.8
 });
 
-map.on('load', function() {
-    // Add a GeoJSON source containing place coordinates and information.
-    map.addSource("places", {
-        "type": "geojson",
-        "data": places
-    });
+map.addControl(new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken
+}));
 
-    places.features.forEach(function(feature) {
-        var symbol = feature.properties['icon'];
-        var layerID = 'poi-' + symbol;
+map.on('click', function(e) {
+  var features = map.queryRenderedFeatures(e.point, {
+    layers: ['findhockey-revised'] // replace this with the name of the layer
+  });
 
-        // Add a layer for this symbol type if it hasn't been added already.
-        if (!map.getLayer(layerID)) {
-            map.addLayer({
-                "id": layerID,
-                "type": "symbol", 
-                "source": "places",
-                "layout": {
-                    "icon-image": symbol + "-15",
-                    "icon-allow-overlap": true
-                },
-                "filter": ["==", "icon", symbol]
-            });
+  if (!features.length) {
+    return;
+  }
 
-            // Add checkbox and label elements for the layer.
-            var input = document.createElement('input');
-            input.type = 'checkbox';
-            input.id = layerID;
-            input.checked = true;
-            filterGroup.appendChild(input);
+  var feature = features[0];
 
-            var label = document.createElement('label');
-            label.setAttribute('for', layerID);
-            label.textContent = symbol;
-            filterGroup.appendChild(label);
-
-            // When the checkbox changes, update the visibility of the layer.
-            input.addEventListener('change', function(e) {
-                map.setLayoutProperty(layerID, 'visibility',
-                    e.target.checked ? 'visible' : 'none');
-            });
-        }
-    });
+  var popup = new mapboxgl.Popup({ offset: [0, -15] })
+    .setLngLat(feature.geometry.coordinates)
+    // set popup features
+    .setHTML('<p><img src="' + feature.properties.Icon + '"></p><h3>' + feature.properties.Name + '</h3><p>' + feature.properties.Type + '</p><p><a href="' + feature.properties.URL1 + '" target="_blank">' + feature.properties.URL1_Type + '</a></p>')
+    .setLngLat(feature.geometry.coordinates)
+    .addTo(map);
 });
+
 </script>
+
+
+<div class="footer">
+    <p>Find Hockey&trade; (Beta) | Copyright: 2018 | <a href= "/htmlform.htm">Add My Team</a> | Contact </p>
+  </div>
+
 
 </body>
 </html>
