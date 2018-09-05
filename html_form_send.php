@@ -16,7 +16,7 @@ if(isset($_POST['email'])) {
 	}
 	
 	// validation expected data exists
-	if(!isset($_POST['first_name']) ||
+	if(!isset($_POST['contact_name']) ||
 		!isset($_POST['last_name']) ||
 		!isset($_POST['email']) ||
 		!isset($_POST['telephone']) ||
